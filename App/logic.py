@@ -76,7 +76,7 @@ def new_logic():
 # Funciones para la carga de datos
 #  -------------------------------------------------------------
 
-#TODO: incorporar las funciones para toma de tiempo y memoria
+#TODO incorporar las funciones para toma de tiempo y memoria
 def load_data(catalog):
     """
     Carga los datos de los archivos y cargar los datos en la
@@ -286,7 +286,7 @@ def get_books_by_author_pub_year(catalog, author_name, pub_year):
     tracemalloc.start()
     start_memory = getMemory()
     
-    # TODO: Completar la función de consulta
+    # TODO Completar la función de consulta
     resultado = None  # Sustituir con la lógica real
     
     # Detener medición de memoria

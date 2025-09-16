@@ -47,7 +47,7 @@ def new_logic():
     control = logic.new_logic()
     return control
 
-# TODO: Incluir las mediciones de tiempo y uso de memoria en la ejecución de la consulta.
+# TODO Incluir las mediciones de tiempo y uso de memoria en la ejecución de la consulta.
 def load_data(control):
     """
     Solicita a la controlador que cargue los datos
@@ -148,7 +148,7 @@ def main():
     while working:
         print_menu()
         inputs = input("Seleccione una opción para continuar\n")
-        # TODO: agregar tiempo de ejecución y consumo de memoria
+        # TODO agregar tiempo de ejecución y consumo de memoria
         if int(inputs[0]) == 1:
             print("Cargando información de los archivos ....")
             bk, at, tg, bktg = load_data(control)
