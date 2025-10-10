@@ -88,8 +88,49 @@ def remove(mp, key):
         sll.delete_element(bucket, pos)
         mp['size'] -= 1
 
-    return mp
+        return mp
 
+def get(mp, key):
+
+    if mp['size'] == 0 or not contains(mp, key):
+        return None
+    else:
+        h = mf.hash_value(mp, key)
+        bucket = mp['table']['elements'][h]
+
+        node = bucket['first']
+        while default_compare(key, node['info']) != 0:
+            node = node['next']
+        
+        return me.get_value(node['info'])
+        
+def size(mp):
+    return mp['size']
+
+def is_empty(mp):
+    return mp['size'] == 0
+
+def key_set(mp):
+    ks = al.new_list()
+
+    if mp['size'] != 0:
+        for bucket in mp['table']['elements']:
+            node = bucket['first']
+            while node is not None:
+                al.add_last(ks, me.get_key(node['info']))
+                node = node['next']
+    return ks
+
+def value_set(mp):
+    vs = al.new_list()
+
+    if mp['size'] != 0:
+        for bucket in mp['table']['elements']:
+            node = bucket['first']
+            while node is not None:
+                al.add_last(vs, me.get_value(node['info']))
+                node = node['next']
+    return vs
 
 def rehash(mp):
     capacity = mf.next_prime(mp['capacity']*2)
