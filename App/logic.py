@@ -30,12 +30,13 @@ import time
 import tracemalloc
 
 
-# TODO Realice la importación del mapa linear probing
-# TODO Realice la importación de ArrayList como estructura de datos auxiliar para sus requerimientos
-# TODO Realice la importación del mapa separate chaining
+from DataStructures.Map import map_linear_probing as lp
+from DataStructures.List import array_list as al
+from DataStructures.Map import map_separate_chaining as sc
 
 
-data_dir = os.path.dirname(os.path.realpath('__file__')) + '/Data/GoodReads/'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+data_dir = os.path.join(BASE_DIR, "Data", "GoodReads")
 
 def new_logic():
     """
@@ -55,20 +56,20 @@ def new_logic():
 
     #Tabla de Hash que contiene los libros indexados por good_reads_book_id  
     #(good_read_id -> book)
-    catalog['books_by_id'] = None #TODO completar la creación del mapa
+    catalog['books_by_id'] = lp.new_map(1000,0.7)
 
     #Tabla de Hash con la siguiente pareja llave valor: (author_name -> List(books))
-    catalog['books_by_authors'] = None #TODO completar la creación del mapa
+    catalog['books_by_authors'] = lp.new_map(1000,0.7)
 
     #Tabla de Hash con la siguiente pareja llave valor: (tag_name -> tag)
-    catalog['tags'] = None #TODO completar la creación del mapa
+    catalog['tags'] = lp.new_map(1000,0.7)
 
     #Tabla de Hash con la siguiente pareja llave valor: (tag_id -> book_tags)
     catalog['book_tags'] = lp.new_map(1000,0.7)
 
     #Tabla de Hash principal que contiene sub-mapas dentro de los valores
     #con la siguiente representación de la pareja llave valor: (author_name -> (original_publication_year -> list(books)))
-    catalog['books_by_year_author'] = None #TODO completar la creación del mapa
+    catalog['books_by_year_author'] = lp.new_map(1000,0.7)
     
     return catalog
 
@@ -76,16 +77,27 @@ def new_logic():
 # Funciones para la carga de datos
 #  -------------------------------------------------------------
 
-#TODO incorporar las funciones para toma de tiempo y memoria
 def load_data(catalog):
     """
     Carga los datos de los archivos y cargar los datos en la
     estructura de datos
     """
+    start_time = getTime()
+    
+    tracemalloc.start()
+    start_memory = getMemory()
+
     books, authors = load_books(catalog)
     tag_size = load_tags(catalog)
     book_tag_size = load_books_tags(catalog)
-    return books, authors,tag_size,book_tag_size
+
+    stop_memory = getMemory()
+
+    end_time = getTime()
+    tiempo = deltaTime(end_time, start_time)
+    memoria = deltaMemory(start_memory, stop_memory)
+    
+    return books, authors, tag_size, book_tag_size, tiempo, memoria
 
 
 def load_books(catalog):
@@ -197,7 +209,9 @@ def add_book_author_and_year(catalog, author_name, book):
     books_by_year_author = catalog['books_by_year_author']
     pub_year = book['original_publication_year']
     #Si el año de publicación está vacío se reemplaza por un valor simbolico
-    #TODO Completar manejo de los escenarios donde el año de publicación es vacío.
+    if not pub_year:
+        pub_year = "No registrado" 
+
     author_value = lp.get(books_by_year_author,author_name)
     if author_value:
         pub_year_value = lp.get(author_value,pub_year)
@@ -208,8 +222,12 @@ def add_book_author_and_year(catalog, author_name, book):
             al.add_last(books, book)
             pub_year_map = lp.new_map(1000,0.7)
             lp.put(pub_year_map,pub_year,book)
+    #Si el autor no se había agregado
     else:
-        pass # TODO Completar escenario donde no se había agregado el autor al mapa principal
+        author_yearsp = sc.new_map(1000,0.7)
+        books = al.new_list()
+        al.add_last(books, book)
+        lp.put(author_yearsp, pub_year, books)
     return catalog
 
 
@@ -235,8 +253,11 @@ def add_book_tag(catalog, book_tag):
     if book_tag_value:
         book_tag_list = lp.get(catalog['book_tags'],t['tag_id'])
         al.add_last(book_tag_list,book_tag)
+    #Si el tag no había sido creado:
     else:
-        pass #TODO Completar escenario donde el book_tag no se había agregado al mapa   
+        book_tag_list = al.new_list()
+        al.add_last(book_tag_list, book_tag)
+        lp.put(catalog['book_tags'], t['tag_id'], book_tag_list)
     return catalog
 
 #  -------------------------------------------------------------
@@ -247,16 +268,16 @@ def get_book_info_by_book_id(catalog, good_reads_book_id):
     """
     Retorna toda la informacion que se tenga almacenada de un libro según su good_reads_id.
     """
-    #TODO Completar función de consulta
-    pass
+    books_map = catalog['books']
+    book_info = lp.get(books_map, good_reads_book_id)
+    return book_info
 
 
 def get_books_by_author(catalog, author_name):
     """
     Retorna los libros asociado al autor ingresado por párametro
     """
-    #TODO Completar función de consulta
-    pass
+    
 
 
 def get_books_by_tag(catalog, tag_name):
@@ -269,8 +290,9 @@ def get_books_by_tag(catalog, tag_name):
     de book_tags y finalmente relacionarlo con los datos completos del libro.
 
     """
-    #TODO Completar función de consulta
-    pass
+    books_by_author = catalog['books_by_author']
+    author_books = lp.get(books_by_author, author_name)
+    return author_books
 
 
 def get_books_by_author_pub_year(catalog, author_name, pub_year):
@@ -286,8 +308,14 @@ def get_books_by_author_pub_year(catalog, author_name, pub_year):
     tracemalloc.start()
     start_memory = getMemory()
     
-    # TODO Completar la función de consulta
-    resultado = None  # Sustituir con la lógica real
+    resultado = None
+    books_by_year_author = catalog['books_by_year_author']
+    
+    # Buscar el autor
+    author_map = sc.get(books_by_year_author, author_name)
+    if author_map:
+        # Buscar el año dentro del mapa del autor
+        resultado = sc.get(author_map, pub_year)
     
     # Detener medición de memoria
     stop_memory = getMemory()
